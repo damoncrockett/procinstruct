@@ -1,0 +1,72 @@
+- chemistry
+-- list of chemicals
+--- what does each one do? 
+--- which step?
+--- which brands mention which chemicals?
+--- chem in search fields
+-- health and safety --- when do they mention it?
+-- fume extraction
+-- environmental safety
+-- eye safety
+-- inhalation
+- concrete examples at each step
+- what is the purpose at each step?
+- high level summary
+
+- give user controls to fill context window
+- but also traditional search, sort, and filter to change views
+- can use semantic similarity in building the vis views
+- unit vis again
+
+- let the user fill the context window with instruction sets
+
+
+
+02_B
+
+- It's bringing in knowledge it knows
+-- paternalistic safety warnings
+-- "be sure to consult current data sheets"
+-- maybe we want to kill this, or maybe not
+--- safety issue about chemicals now known to be harmful
+---- e.g., "fume the mercury"
+
+-- Maybe use approved summary as a schema to prompt every model
+--- We don't want it overindexing on one set of instructions if what we want is general advice about how to process photos
+-- manufacturers can use their own terminology, we need to standardize this
+--- Rinsing (Kodak) vs stop bath
+
+
+
+Should this app talk to Paperbase?
+- How do we get it to share instructions across all relevant papers?
+- "Show me a summary of how to process Kodabromide?" (from Paperbase)
+
+Traditional OCR not great for tables
+- Maybe need to use GPT-4 Vision
+
+
+01_agg
+
+- Summaries of summaries are better
+-- the long context raw summaries include too many specifics and aren't as organized
+-- and to be fair, the sum-of-sum approach gets to read MORE examples
+- System prompt doesn't seem to help, and if anything, hurts?
+- You can always use your own template! And learn it from the data!
+-- For anything you will reuse, you can just rerun until you get what you like
+-- You're a judge now, not a worker
+
+
+TEMPLATE
+- derive from sum of sums
+- use for tagging or JSON, perhaps
+- apply to all items via JSON extraction
+-- and then we will have to try to standardize the values for each JSON key
+
+
+APP ANSWER Q
+-What is missing? What is left out?
+-- environmental safety
+-- proper disposal and handling
+- Can the app recommend a generic approach to making a photograph? 
+

@@ -1,16 +1,13 @@
-The goal here is to build an accessible knowledge base using a collection of 704 sets of processing instructions for gelatin silver photographic paper.
+NEW APPROACH
 
-I'm going to use LLMs heavily as a research assistant, and I'm sticking almost exclusively to programming the LLM using prompt engineering, because I want to see how far you can take it. Prompt engineering promises to make this kind of workflow accessible to folks in cultural heritage, and so rather than use a bunch of embedding tricks and clever software, I want to see how steerable these models are using only prompts. I am, however, using OpenAI's premier models, but tests should be run using other models, too. 
+- focus on structured extraction
+- using Instructor / Pydantic
+- probably ColBERT and perhaps even DSPy
+- using even GPT-4V to extract data from scans, instead of using traditional OCR
 
-It's worth pointing out, though, that if you tune your prompts to work well for GPT-4, there's no guarantee they will work well for all models.
+VISION STEP
+- Need to get:
+ - tables
+ - open text
+ - end matter, front matter
 
-I will run tests on various parts of the process, but I am not trying to design a numeric evaluation scheme. I'd rather just present the results, and talk about them. Choosing a metric always makes it about the metric, and I don't want to focus on something like that here.
-
-Note that LLM outputs are not deterministic, even if you use a "seed" parameter, but I don't see a problem with that. That's true of all people, too. And if you want people to be more deterministic, you tell them so, and you can do that with an LLM.
-
-I tell the model to respond with just a list, items separated by underscore.
-
-1. pdf2image
-2. OCR using PyTesseract
-3. Extraction
-- automated extraction PLAN: can the LLM tell me what information is important?

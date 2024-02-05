@@ -1,0 +1,89 @@
+The goal here is to build an accessible knowledge base using a collection of 704 sets of processing instructions for gelatin silver photographic paper.
+
+I'm going to use LLMs heavily as a research assistant, and I'm sticking almost exclusively to programming the LLM using prompt engineering, because I want to see how far you can take it. Prompt engineering promises to make this kind of workflow accessible to folks in cultural heritage, and so rather than use a bunch of embedding tricks and clever software, I want to see how steerable these models are using only prompts. I am, however, using OpenAI's premier models, but tests should be run using other models, too. 
+
+It's worth pointing out, though, that if you tune your prompts to work well for GPT-4, there's no guarantee they will work well for all models.
+
+I will run tests on various parts of the process, but I am not trying to design a numeric evaluation scheme. I'd rather just present the results, and talk about them. Choosing a metric always makes it about the metric, and I don't want to focus on something like that here.
+
+Note that LLM outputs are not deterministic, even if you use a "seed" parameter, but I don't see a problem with that. That's true of all people, too. And if you want people to be more deterministic, you tell them so, and you can do that with an LLM.
+
+I tell the model to respond with just a list, items separated by underscore.
+
+1. pdf2image
+
+2. OCR using PyTesseract
+- Make sure you properly orient your image! PyTesseract is not robust to rotations
+- I tried to fix this using pytesseract, rotating the image, and GPT-3.5 Turbo to check for gobbledygook. It was not easy. 
+-- First prompt: """Does the following text look corrupted or garbled? If so, respond simply with 'yes' and nothing else. Otherwise, respond simply with 'no' and nothing else: """
+--- This was too permissive, and it labeled as corrupt text some things that weren't
+-- Second prompt: """Your job is to determine whether the following text is unintelligible. If all of it is unintelligible, respond simply with 'yes' and nothing else. If instead some part of it is intelligible, and looks like it could have come from photographic processing instructions, respond simply with 'no' and nothing else: """
+--- This was better. I had to use 'safe_api_call' bc I was getting APIConnectionError sometimes
+--- Thrown off a bit by Chinese characters, but this didn't seem to affect much
+--- One issue though is that I don't know when single images failed, only whether zero text was recovered from all pages, which never happened. But I suppose if GPT couldn't make sense of a page, then it doesn't matter whether we have it or not
+--- Ultimately, this didn't work well enough, and we still had some garbled text, and sometimes pytesseract CAN deal with rotations. Too messy
+-- New tack: grab OCR's from all 4 rotations, and ask GPT which one is the most intelligible
+--- prompt: """What follows are four texts, each preceded by one of these labels: '____0____', '____1____', '____2____', and '____3____'. Your job is to determine which one contains the highest proportion of intelligible text. Respond with its label and nothing else: """
+--- Note: truncating is essential, because GPT-3.5 has too small a context window
+--- This works very well, truncating each text to 512 tokens, but the script is too slow, bc pytesseract is slow
+--- Would have taken 27 hours, and I can do it much faster by hand
+--- I'm certain there is some faster way to automate this (e.g., just using a faster computer), but at this point, it doesn't make sense to spend more time on it. Sometimes doing it by hand is the best way, even in the modern AI era
+
+3. Manually prescribed rotation
+- Went through and determined rotations by hand
+- Realized in this process: are two-column pages going to be an issue?
+- Also, tables will be an issue. We aren't getting good recall from those tables
+-- It may turn out that we need to use GPT-4 Vision for all of these, because we need to extract table information
+--- Honestly I'm not even sure that will fully work
+--- I've has issues with tables in the past
+--- Could perhaps try to fine-tune a smaller model, but I'd hate to lose what GPT-4 Vision has, and I can't fine tune that!
+--- But this shows that the processing instructions are a great test case. They have lots of variety:
+---- Different languages, including Chinese characters
+---- Yes typeset, but across decades and in very different fonts
+---- Lots of tables, numbers, chemical names, etc.
+---- Lots of different formatting, with columns, etc.
+- catalog 132 is weird, not even really instructions
+- Note that the particular prescriptions are not repeatable, starting from the PDFs, because earlier attempts at automating the rotations fixed a bunch and messed up some others. And I don't feel like going back and running pdf2image again, because it takes a while.
+-- Also worth noting that my previous efforts actually did quite well, and I probably don't need to do what I'm doing, but I just want to be sure
+-- The only images that seem off now are really weird pages, like front covers with almost no text, or back pages, or Chinese characters
+
+
+4. Extraction
+- automated extraction PLAN: can the LLM tell me what information is important?
+- SYSTEM_PROMPT = """You are an expert researcher in the material history of photography. You've dedicated your research career to 
+understanding the physical materials and chemical processes of gelatin silver black and white photography. In particular, you are very 
+adept at reading and understanding the processing instructions commonly enclosed in packages of photographic paper. You've spent countless
+days and nights in the darkroom, exposing, developing, and fixing photographs, and you are intimately familiar with a wide variety of 
+photographic processes, from all the major paper manufacturers. Your expert eye can scan photographic processing instructions and identify
+all the important information, the sort of thing useful both to photograph printers and to researchers in the history of photography."""
+- USER_PROMPT = """What follows is the full text of photographic processing instructions taken from a package of photographic paper. Your 
+job is carefully to read and understand the instructions and then generate a list containing all the important bits of information 
+contained within. There is no minimum or maximum number of items you need to put in the list. Use your expert judgment to make sure that 
+every important piece of information is listed. We want to make sure we don't miss anything, and we'd rather that you err on the side of 
+including too much, rather than too little: """
+-- This was modified. Originally, I asked the model to output the content as strings separated by underscores, and to make the list items "succinct". But it was eliminating too much information, I think.
+- BRIEF_USER_PROMPT = """What are the most important pieces of information in this document?"""
+- I did the sys/nosys, long/short prompt, and multiple trials
+- Then I did a set of 50 docs with the system prompt and the long user prompt
+- I then aggregated them
+-- AGGPROMPT = """What follows is fifty separate summaries of photographic processing instructions. The summaries are separated by the 
+'__[BREAK]__' separator. Your job is carefully to read and understand each summary, and to distill from these summaries a list of 
+essential elements of photographic processing instructions. Your goal is to teach us what to look for in a set of photographic 
+processing instructions. Use only the information contained in the summaries to derive your list of essential elements: """
+-- five trials each with and without the 'photo expert' system prompt
+
+5. Breakdown
+- Idea is to have the machine teach me how to make a photo
+- Related to extraction, obviously, but slightly different
+- Original prompt, which I don't think was right: """What follows is the full text of photographic processing instructions taken from a package of photographic paper. Your job is carefully to read and understand the instructions and then summarize them in a way that preserves the important information and discards the unimportant: """
+- New prompt: USER_PROMPT = """What follows is the full text of photographic processing instructions taken from a package of photographic paper. Your 
+job is carefully to read and understand the instructions and then explain to me how to process a photo using this photographic paper: """
+
+6. Long Context
+- Very similar to the aggregative extraction setup, but going from raw documents to aggregation without the intermediate step of summary
+- USER_PROMPT = """What follows is the photographic processing instructions taken from multiple different packages of photographic paper. 
+The instructions are formatted as a single string with each set of instructions separated by the '__[BREAK]__' separator. Your job is to 
+consider each set of instructions individually and then distill from these sets a list of essential elements of photographic processing 
+instructions. Your goal is to teach us what to look for in a set of photographic processing instructions. Use only the information 
+contained in the instructions to derive your list of essential elements: """
+- Could only fit 16 documents in context (100k)
